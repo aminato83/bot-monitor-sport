@@ -1,0 +1,30 @@
+{
+  "calcio": [
+    "https://www.tuttocampo.it/RSS",
+    "https://www.tuttoc.com/rss",
+    "https://www.notiziariocalcio.com/rss",
+    "https://www.tuttoseried.com/feed",
+    "https://www.seried24.com/feed",
+    "https://www.calciominuto.com/feed",
+    "https://www.lacnews24.it/rss/sport",
+    "https://www.romatoday.it/rss",
+    "https://www.today.it/sport/rss",
+    "https://www.centotrentuno.com/feed",
+    "https://www.marcheingol.it/feed"
+  ],
+  "basket": [
+    "https://www.basketinside.com/feed",
+    "https://www.pianetabasket.com/feed"
+  ],
+  "volley": [
+    "http://www.legavolley.it/rss.asp",
+    "https://www.pianetavolley.net/feed"
+  ],
+  "futsal": [
+    "https://www.divisionecalcioa5.it/feed",
+    "https://www.calcioa5live.com/rss"
+  ],
+  "pallamano": [
+    "https://www.handballtime.it/feed"
+  ]
+}
