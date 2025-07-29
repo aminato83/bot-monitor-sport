@@ -1,97 +1,88 @@
+import requests
+from bs4 import BeautifulSoup
 import json
-import feedparser
-from telegram import Bot
-import schedule
 import time
+import schedule
 import os
+from telegram import Bot
 
-# 🔐 Token del bot Telegram e tuo chat ID
-TELEGRAM_TOKEN = "8224474749:AAE8sg_vC7HFFq1oJMKowtbTFwwwoH4QHwU"
-CHAT_ID = 7660020792
-
-bot = Bot(token=TELEGRAM_TOKEN)
-
-# 🧠 Parole chiave da cercare nei feed
-parole_chiave = [
-    "infortunio", "infortuni", "infortunato", "infortunati",
-    "squalifica", "squalificato", "squalificati", "espulso", "espulsi", "espulsioni",
-    "problemi economici", "problemi finanziari", "fallimento", "fallimenti",
-    "stipendi non pagati", "mensilità non pagate", "stipendi arretrati", "giornate di squalifica",
-    "precampionato in ritardo", "preparazione in ritardo", "debiti", "problemi di formazione",
-    "penalizzazione", "ritardo stipendi", "esonero", "società in crisi",
-    "virus", "covid", "allenamenti annullati", "problemi societari", "lite interna", "crisi tecnica"
+# --- CONFIGURAZIONE ---
+KEYWORDS = [
+    "infortunio", "infortuni", "infortunato", "infortunati", "squalifica", "squalificato", "squalificati",
+    "espulso", "espulsi", "espulsioni", "problemi economici", "problemi finanziari", "fallimento", "fallimenti",
+    "stipendi non pagati", "mensilità non pagate", "debiti", "precampionato in ritardo", "preparazione in ritardo",
+    "stipendi arretrati", "giornate di squalifica", "problemi di formazione", "virus", "covid", "allenamenti annullati",
+    "problemi societari", "lite interna", "crisi tecnica"
 ]
 
-# 📁 File per tracciare notizie già inviate
-file_inviate = 'inviate.json'
+CHAT_ID = "6635379606"  # <-- tuo chat ID
+BOT_TOKEN = "6711468996:AAEeU9TWvLRvo5KDOiQgKqP0DWZ5U8wv_WI"  # <-- tuo bot token
 
-# 📥 Carica i feed RSS dal file sources.json
-def carica_fonti():
-    with open('sources.json', 'r', encoding='utf-8') as file:
-        return json.load(file)
+bot = Bot(token=BOT_TOKEN)
 
-# 📤 Carica le notizie già inviate dal file JSON
-def carica_inviate():
-    if not os.path.exists(file_inviate):
-        with open(file_inviate, 'w') as f:
-            json.dump([], f)
-    with open(file_inviate, 'r') as f:
-        try:
-            return json.load(f)
-        except json.JSONDecodeError:
-            return []
+# --- CARICAMENTO FONTI ---
+with open("sources.json", "r", encoding="utf-8") as f:
+    fonti = json.load(f)
 
-# 💾 Salva le notizie già inviate
-def salva_inviate(lista):
-    with open(file_inviate, 'w') as f:
-        json.dump(lista, f)
+# --- FILE NOTIZIE GIÀ INVIATE ---
+FILE_INVIATE = "inviate.json"
+if not os.path.exists(FILE_INVIATE):
+    with open(FILE_INVIATE, "w", encoding="utf-8") as f:
+        json.dump([], f)
 
-# 🔎 Analizza i feed e cerca parole chiave
+def notizia_gia_inviata(link, notizie_gia_inviate):
+    return link in notizie_gia_inviate
+
+def salva_link_inviato(link, notizie_gia_inviate):
+    notizie_gia_inviate.append(link)
+    with open(FILE_INVIATE, "w", encoding="utf-8") as f:
+        json.dump(notizie_gia_inviate, f)
+
+def contiene_keywords(testo):
+    testo = testo.lower()
+    return any(kw in testo for kw in KEYWORDS)
+
 def analizza_fonti(fonti):
-    notizie_trovate = 0
-    notizie_gia_inviate = carica_inviate()
+    with open(FILE_INVIATE, "r", encoding="utf-8") as f:
+        try:
+            notizie_gia_inviate = json.load(f)
+        except json.decoder.JSONDecodeError:
+            notizie_gia_inviate = []
 
-    for sport, urls in fonti.items():
-        print(f"\n🔍 Analizzando notizie per: {sport.upper()}")
-        for url in urls:
-            try:
-                feed = feedparser.parse(url)
-                for notizia in feed.entries:
-                    titolo = notizia.title.lower()
-                    descrizione = notizia.get("summary", "").lower()
-                    testo = f"{titolo} {descrizione}"
-                    link = notizia.link
+    for fonte in fonti:
+        categoria = fonte["categoria"]
+        url = fonte["url"]
+        selettore = fonte["selettore"]
 
-                    if link in notizie_gia_inviate:
-                        continue
+        print(f"🔍 Analizzando notizie per: {categoria.upper()}")
 
-                    if any(parola in testo for parola in parole_chiave):
-                        messaggio = f"🚨 [{sport.upper()}] {notizia.title}\n🔗 {link}"
-                        bot.send_message(chat_id=CHAT_ID, text=messaggio)
-                        print("📨 Inviato su Telegram:", messaggio)
-                        notizie_gia_inviate.append(link)
-                        notizie_trovate += 1
+        try:
+            response = requests.get(url, timeout=10)
+            soup = BeautifulSoup(response.content, "html.parser")
+            articoli = soup.select(selettore)
 
-                time.sleep(1)
-            except Exception as e:
-                print(f"⚠️ Errore nel sito: {url} — {e}")
+            for articolo in articoli:
+                titolo = articolo.get_text(strip=True)
+                link = articolo.get("href")
+                if not link.startswith("http"):
+                    link = url.rstrip("/") + "/" + link.lstrip("/")
 
-    salva_inviate(notizie_gia_inviate)
+                if contiene_keywords(titolo) and not notizia_gia_inviata(link, notizie_gia_inviate):
+                    messaggio = f"🚨 [{categoria.upper()}] {titolo}\n🔗 {link}"
+                    bot.send_message(chat_id=CHAT_ID, text=messaggio)
+                    print(f"📨 Inviato su Telegram: {titolo}")
+                    salva_link_inviato(link, notizie_gia_inviate)
 
-    if notizie_trovate == 0:
-        print("🔄 Nessuna notizia rilevante trovata.")
+        except Exception as e:
+            print(f"⚠️ Errore durante l'analisi di {url}: {e}")
 
-# 🔁 Azione da ripetere ogni 10 minuti
+# --- SCHEDULAZIONE ---
 def job():
-    fonti = carica_fonti()
     analizza_fonti(fonti)
 
-# ⏱️ Avvio del controllo ogni 10 minuti
+print("⏳ Il bot è in esecuzione. Controlla ogni 10 minuti...")
 schedule.every(10).minutes.do(job)
 
-print("⏳ Il bot è in esecuzione. Controlla ogni 10 minuti...")
-
-# 🔁 Loop continuo
 while True:
     schedule.run_pending()
     time.sleep(1)
