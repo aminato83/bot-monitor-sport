@@ -1,64 +1,99 @@
 import json
+import os
 import asyncio
-from telethon import TelegramClient, events
-from telegram import Bot
+import re
+from telethon.sync import TelegramClient
+from telethon.tl.types import PeerChannel
+from telethon.errors.common import TypeNotFoundError
+from datetime import datetime
+import logging
+import time
 
-# 🔐 Inserisci i tuoi dati API di Telegram (da https://my.telegram.org)
-api_id = 23705599
-api_hash = 'c472eb3f5c85a74f99bec9aa3cfef294'
+# Logging base
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
 
-# 🔐 Bot Telegram per inviare notifiche
-TELEGRAM_TOKEN = "8224474749:AAE8sg_vC7HFFq1oJMKowtbTFwwwoH4QHwU"
-CHAT_ID = 7660020792
-bot = Bot(token=TELEGRAM_TOKEN)
+# Carica configurazioni
+API_ID = int(os.getenv("API_ID"))
+API_HASH = os.getenv("API_HASH")
+SESSION_NAME = os.getenv("SESSION_NAME", "monitor")
+TELEGRAM_ALERT_CHAT_ID = int(os.getenv("TELEGRAM_ALERT_CHAT_ID"))
 
-# 🧠 Parole chiave da cercare
-parole_chiave = [
-    "infortunio", "infortuni", "infortunato", "infortunati",
-    "squalifica", "squalificato", "squalificati",
-    "espulso", "espulsi", "espulsioni",
-    "problemi economici", "problemi finanziari", "fallimento", "fallimenti",
-    "stipendi non pagati", "mensilità non pagate", "stipendi arretrati",
-    "debiti", "precampionato in ritardo", "preparazione in ritardo",
-    "giornate di squalifica", "problemi di formazione",
-    "problema fisico", "non convocato", "assenza", 
-    "ritardo stipendi", "penalizzazione", "esonero", "società in crisi",
-    "virus", "covid", "allenamenti annullati",
-    "problemi societari", "lite interna", "crisi tecnica"
+# File contenente i canali da monitorare
+CHANNELS_FILE = "telegram_channels.json"
+# File per tenere traccia dei messaggi già inviati
+MESSAGES_SENT_FILE = "sent_telegram_messages.json"
+
+# Parole chiave importanti
+KEYWORDS = [
+    "infortun", "assente", "problema", "problemi", "squalific", "riserve",
+    "non convocato", "fuori", "assenza", "crisi", "debito", "fallimento",
+    "società in crisi", "problemi economici", "stipendi", "indisponibile"
 ]
 
-# 🔗 Carica i canali Telegram da monitorare
-with open("telegram_channels.json", "r", encoding="utf-8") as f:
-    channels = json.load(f)
+# Carica messaggi già inviati
+def carica_messaggi_gia_inviati():
+    if os.path.exists(MESSAGES_SENT_FILE):
+        with open(MESSAGES_SENT_FILE, "r", encoding="utf-8") as f:
+            return set(json.load(f))
+    return set()
 
-# 📁 Messaggi già inviati (per evitare duplicati)
-try:
-    with open('messaggi_telegram_inviati.json', 'r', encoding='utf-8') as f:
-        messaggi_inviati = json.load(f)
-except FileNotFoundError:
-    messaggi_inviati = []
+# Salva messaggi già inviati
+def salva_messaggi_gia_inviati(messaggi):
+    with open(MESSAGES_SENT_FILE, "w", encoding="utf-8") as f:
+        json.dump(list(messaggi), f, ensure_ascii=False)
 
-client = TelegramClient("monitor_session", api_id, api_hash)
+# Funzione filtro intelligente
+def contiene_keyword_testo(text):
+    text_lower = text.lower()
+    for keyword in KEYWORDS:
+        if re.search(rf"\b{keyword}\b", text_lower):
+            return True
+    return False
 
-@client.on(events.NewMessage(chats=channels))
-async def handler(event):
-    testo = event.message.message.lower()
-    link = f"https://t.me/{event.chat.username}/{event.message.id}"
+# Avvio monitoraggio
+async def main():
+    logging.info("🚀 Avvio monitoraggio canali Telegram...")
+    
+    # Carica i canali
+    if not os.path.exists(CHANNELS_FILE):
+        logging.error(f"❌ File {CHANNELS_FILE} non trovato.")
+        return
+    
+    with open(CHANNELS_FILE, "r", encoding="utf-8") as f:
+        channels = json.load(f)
+    
+    messaggi_inviati = carica_messaggi_gia_inviati()
 
-    if any(parola in testo for parola in parole_chiave) and link not in messaggi_inviati:
-        messaggio = f"🚨 [TELEGRAM] {event.chat.title}\n📝 {event.message.message[:100]}...\n🔗 {link}"
-        try:
-            bot.send_message(chat_id=CHAT_ID, text=messaggio)
-            print("📨 Inviato su Telegram:", messaggio)
-            messaggi_inviati.append(link)
+    async with TelegramClient(SESSION_NAME, API_ID, API_HASH) as client:
+        while True:
+            for channel in channels:
+                try:
+                    entity = await client.get_entity(channel)
+                    messages = await client.get_messages(entity, limit=10)
 
-            # Aggiorna file
-            with open('messaggi_telegram_inviati.json', 'w', encoding='utf-8') as f:
-                json.dump(messaggi_inviati, f, indent=2)
+                    for message in messages:
+                        if message.id and str(message.id) not in messaggi_inviati:
+                            testo = message.message or ""
+                            if contiene_keyword_testo(testo):
+                                link = f"https://t.me/{channel.replace('@', '')}/{message.id}"
+                                alert = f"📢 Nuova segnalazione da {channel}:\n\n{testo}\n\n🔗 {link}"
+                                await client.send_message(TELEGRAM_ALERT_CHAT_ID, alert)
+                                logging.info(f"✅ Messaggio inviato: {alert[:80]}...")
+                                messaggi_inviati.add(str(message.id))
+                    
+                except TypeNotFoundError as e:
+                    logging.warning(f"⚠️ TypeNotFoundError su {channel}: {str(e)}")
+                except Exception as e:
+                    logging.error(f"❌ Errore nel canale {channel}: {e}")
 
-        except Exception as e:
-            print(f"⚠️ Errore nell'invio messaggio Telegram: {e}")
+                # Attendi 3 secondi prima del prossimo canale
+                time.sleep(3)
 
-print("▶️ Monitoraggio canali Telegram avviato...")
-client.start()
-client.run_until_disconnected()
+            # Salva i messaggi già inviati ogni ciclo
+            salva_messaggi_gia_inviati(messaggi_inviati)
+
+            logging.info("🔁 Attendo 10 minuti prima del prossimo ciclo...")
+            await asyncio.sleep(600)  # 10 minuti
+
+if __name__ == "__main__":
+    asyncio.run(main())
