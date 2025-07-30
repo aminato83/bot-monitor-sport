@@ -11,7 +11,7 @@ load_dotenv()
 API_ID = 23705599
 API_HASH = "c472eb3f5c85a74f99bec9aa3cfef294"
 SESSION_NAME = "telegram_monitor"
-ALERT_CHAT_ID = 6463144062
+ALERT_CHAT_ID = 7660020792
 
 # ✅ SOLO canali verificati
 CHANNELS_TO_MONITOR = [
