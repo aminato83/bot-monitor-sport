@@ -10,8 +10,8 @@ load_dotenv()
 # ⚙️ DATI DI CONFIGURAZIONE
 API_ID = 23705599
 API_HASH = "c472eb3f5c85a74f99bec9aa3cfef294"
-SESSION_NAME = "telegram_monitor"  # ⚠️ Deve corrispondere al nome del file telegram_monitor.session
-ALERT_CHAT_ID = 6463144062  # Chat ID dove vuoi ricevere gli alert (es. tuo canale/bot/chat)
+SESSION_NAME = "telegram_monitor"  
+ALERT_CHAT_ID = 6463144062 
 
 # ⚠️ Lista canali da monitorare (puoi modificarla)
 CHANNELS_TO_MONITOR = [
