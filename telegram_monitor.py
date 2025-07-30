@@ -1,75 +1,73 @@
 import os
-import json
 import asyncio
 import logging
-from datetime import datetime
 from telethon import TelegramClient, events
-from telethon.errors import SessionPasswordNeededError
+from dotenv import load_dotenv
 
-logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
+# Carica variabili da .env (opzionale ma consigliato)
+load_dotenv()
 
-# Caricamento delle variabili d'ambiente
-API_ID = int(os.getenv("API_ID"))
-API_HASH = os.getenv("API_HASH")
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-SESSION_NAME = os.getenv("SESSION_NAME", "anon")
-ALERT_CHAT_ID = int(os.getenv("ALERT_CHAT_ID"))
-CHANNELS_FILE = os.getenv("CHANNELS_FILE", "telegram_channels.json")
-KEYWORDS_FILE = os.getenv("KEYWORDS_FILE", "keywords.json")
-PHONE_OR_TOKEN = os.getenv("PHONE_OR_TOKEN")
+# ⚙️ DATI DI CONFIGURAZIONE
+API_ID = 23705599
+API_HASH = "c472eb3f5c85a74f99bec9aa3cfef294"
+SESSION_NAME = "telegram_monitor"  # ⚠️ Deve corrispondere al nome del file telegram_monitor.session
+ALERT_CHAT_ID = 6463144062  # Chat ID dove vuoi ricevere gli alert (es. tuo canale/bot/chat)
 
-# Funzione per caricare i canali da monitorare
-def load_channels():
-    try:
-        with open(CHANNELS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except Exception as e:
-        logging.error(f"Errore nel caricamento dei canali: {e}")
-        return []
+# ⚠️ Lista canali da monitorare (puoi modificarla)
+CHANNELS_TO_MONITOR = [
+    "tuttoseried",
+    "seried_24",
+    "seriedignorante",
+    "seriecnews",
+    "legaseriecofficial",
+    "seriecofficial",
+    "seriec",
+    "cornerjpeg"
+]
 
-# Funzione per caricare le keyword
-def load_keywords():
-    try:
-        with open(KEYWORDS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except Exception as e:
-        logging.error(f"Errore nel caricamento delle keywords: {e}")
-        return []
+# 🔍 Parole chiave da cercare nei messaggi
+KEYWORDS = [
+    "infortunio", "problema", "assenza", "non convocato", "multa", "fallimento", "ritiro",
+    "ritiro squadra", "partita annullata", "stadio chiuso", "penalizzazione", "debiti",
+    "tifosi infuriati", "assenze importanti", "squalifica", "indisponibile", "dimissioni",
+    "esonero", "campo neutro", "senza pubblico", "problemi societari", "pignoramento"
+]
 
-# Funzione principale asincrona
+# 🎯 Funzione principale
 async def main():
+    logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
     logging.info("🚀 Avvio monitoraggio canali Telegram...")
 
     client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
 
-    if PHONE_OR_TOKEN:
-        await client.start(phone=lambda: PHONE_OR_TOKEN)
-    else:
-        await client.start()
+    await client.start()  # Usa il file .session esistente per evitare il login
 
-    channels = load_channels()
-    keywords = load_keywords()
-
-    # Monitoraggio messaggi nei canali
-    @client.on(events.NewMessage(chats=channels))
+    @client.on(events.NewMessage)
     async def handler(event):
-        text = event.raw_text.lower()
-        for keyword in keywords:
-            if keyword.lower() in text:
-                link = f"https://t.me/{event.chat.username}/{event.id}" if event.chat.username else "Messaggio privato"
-                messaggio = f"🔍 *Keyword trovata:* `{keyword}`\n📢 *Canale:* {event.chat.title}\n🕒 *Data:* {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n🔗 *Link:* {link}"
-                try:
-                    await client.send_message(ALERT_CHAT_ID, messaggio, parse_mode="markdown")
-                    logging.info(f"Inviato alert per keyword: {keyword}")
-                except Exception as e:
-                    logging.error(f"Errore nell'invio dell'alert: {e}")
-                break
+        try:
+            sender = await event.get_chat()
+            message_text = event.message.message.lower()
+
+            for keyword in KEYWORDS:
+                if keyword in message_text:
+                    alert_text = f"🚨 Parola chiave trovata: *{keyword}*\n📣 Canale: {getattr(sender, 'title', 'Sconosciuto')} ({event.chat_id})\n\n📝 Messaggio:\n{event.message.message}"
+                    await client.send_message(ALERT_CHAT_ID, alert_text)
+                    logging.info(f"🔔 ALERT inviato: {keyword}")
+                    break
+
+        except Exception as e:
+            logging.error(f"❌ Errore nella gestione del messaggio: {e}")
+
+    # 🔔 Unisciti ai canali (se non già dentro)
+    for channel in CHANNELS_TO_MONITOR:
+        try:
+            await client(JoinChannelRequest(channel))
+            logging.info(f"✅ Unito al canale: {channel}")
+        except Exception as e:
+            logging.warning(f"⚠️ Non riesco ad accedere al canale {channel}: {e}")
 
     await client.run_until_disconnected()
 
-# Avvia lo script
+# 🚀 Avvio
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except (KeyboardInterrupt, SystemExit):
-        logging.info("🛑 Bot interrotto manualmente.")
+    asyncio.run(main())
