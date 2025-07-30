@@ -1,6 +1,7 @@
 import os
 import asyncio
 import logging
+from telethon.tl.functions.channels import JoinChannelRequest
 from telethon import TelegramClient, events
 from dotenv import load_dotenv
 
