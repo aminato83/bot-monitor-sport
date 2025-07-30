@@ -17,12 +17,12 @@ ALERT_CHAT_ID = 6463144062
 # ⚠️ Lista canali da monitorare (puoi modificarla)
 CHANNELS_TO_MONITOR = [
     "tuttoseried",
-    "seried_24",
+    "serieDHCWP",
     "seriedignorante",
-    "seriecnews",
+    "serieDofficial",
     "legaseriecofficial",
     "seriecofficial",
-    "seriec",
+    "SeriCPassionHub",
     "cornerjpeg"
 ]
 
