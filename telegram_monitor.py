@@ -1,32 +1,25 @@
 import os
 import asyncio
 import logging
-from telethon.tl.functions.channels import JoinChannelRequest
 from telethon import TelegramClient, events
+from telethon.tl.functions.channels import JoinChannelRequest
 from dotenv import load_dotenv
 
-# Carica variabili da .env (opzionale ma consigliato)
+# Carica variabili da .env
 load_dotenv()
 
-# ⚙️ DATI DI CONFIGURAZIONE
 API_ID = 23705599
 API_HASH = "c472eb3f5c85a74f99bec9aa3cfef294"
-SESSION_NAME = "telegram_monitor"  
-ALERT_CHAT_ID = 6463144062 
+SESSION_NAME = "telegram_monitor"
+ALERT_CHAT_ID = 6463144062
 
-# ⚠️ Lista canali da monitorare (puoi modificarla)
+# ✅ SOLO canali verificati
 CHANNELS_TO_MONITOR = [
-    "tuttoseried",
     "serieDHCWP",
-    "seriedignorante",
     "serieDofficial",
-    "legaseriecofficial",
-    "seriecofficial",
-    "SeriCPassionHub",
-    "cornerjpeg"
+    "SerieCPassionHub"
 ]
 
-# 🔍 Parole chiave da cercare nei messaggi
 KEYWORDS = [
     "infortunio", "problema", "assenza", "non convocato", "multa", "fallimento", "ritiro",
     "ritiro squadra", "partita annullata", "stadio chiuso", "penalizzazione", "debiti",
@@ -34,14 +27,12 @@ KEYWORDS = [
     "esonero", "campo neutro", "senza pubblico", "problemi societari", "pignoramento"
 ]
 
-# 🎯 Funzione principale
 async def main():
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
     logging.info("🚀 Avvio monitoraggio canali Telegram...")
 
     client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
-
-    await client.start()  # Usa il file .session esistente per evitare il login
+    await client.start()
 
     @client.on(events.NewMessage)
     async def handler(event):
@@ -59,7 +50,7 @@ async def main():
         except Exception as e:
             logging.error(f"❌ Errore nella gestione del messaggio: {e}")
 
-    # 🔔 Unisciti ai canali (se non già dentro)
+    # (Facoltativo) Prova ad unirti ai canali
     for channel in CHANNELS_TO_MONITOR:
         try:
             await client(JoinChannelRequest(channel))
@@ -69,6 +60,5 @@ async def main():
 
     await client.run_until_disconnected()
 
-# 🚀 Avvio
 if __name__ == "__main__":
     asyncio.run(main())
