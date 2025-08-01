@@ -1,31 +1,22 @@
 import os
 import logging
+import asyncio
 from dotenv import load_dotenv
 from telethon import TelegramClient, events
 from telethon.tl.functions.channels import JoinChannelRequest
-import asyncio
-import telegram
+import requests
 
-# 📦 Carica variabili da .env
+# Carica variabili da .env
 load_dotenv()
-API_ID = int(os.getenv("API_ID", "23705599"))
-API_HASH = os.getenv("API_HASH", "c472eb3f5c85a74f99bec9aa3cfef294")
+
+API_ID = 23705599
+API_HASH = "c472eb3f5c85a74f99bec9aa3cfef294"
 SESSION_NAME = "telegram_monitor"
 
-# 🔐 Token e Chat ID per bot ufficiale
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "8224474749:AAE8sg_vC7HFFq1oJMKowtbTFwwwoH4QHwU")
-CHAT_ID = int(os.getenv("ALERT_CHAT_ID", "7660020792"))  # Canale o gruppo ricevente
+# Bot Telegram ufficiale per invio alert
+BOT_TOKEN = "8224474749:AAE8sg_vC7HFFq1oJMKowtbTFwwwoH4QHwU"
+CHAT_ID = "7660020792"
 
-# 🔎 Parole chiave da cercare
-KEYWORDS = [
-    "infortunio", "problema", "assenza", "non convocato", "multa", "fallimento", "ritiro",
-    "ritiro squadra", "partita annullata", "stadio chiuso", "penalizzazione", "debiti",
-    "tifosi infuriati", "assenze importanti", "squalifica", "indisponibile", "dimissioni",
-    "esonero", "campo neutro", "senza pubblico", "problemi societari", "finestra di mercato chiuso",
-    "giocheranno giovani", "pignoramento"
-]
-
-# 📣 Canali da monitorare
 CHANNELS_TO_MONITOR = [
     "serieDHCWP",
     "serieDofficial",
@@ -38,10 +29,38 @@ CHANNELS_TO_MONITOR = [
     "calciominorecd"
 ]
 
-# 🔁 Per evitare duplicati
-processed_message_ids = set()
+KEYWORDS = [
+    "infortunio", "problema", "assenza", "non convocato", "multa", "fallimento", "ritiro",
+    "ritiro squadra", "partita annullata", "stadio chiuso", "penalizzazione", "debiti",
+    "tifosi infuriati", "assenze importanti", "squalifica", "indisponibile", "dimissioni",
+    "esonero", "campo neutro", "senza pubblico", "problemi societari", "finestra di mercato chiuso",
+    "giocheranno giovani", "pignoramento"
+]
 
-# 🚀 Funzione principale
+# Salva messaggi già visti per evitare duplicati
+seen_message_ids = set()
+
+async def send_alert(keyword, sender, message):
+    alert_text = (
+        f"🚨 Parola chiave trovata: *{keyword}*\n"
+        f"📣 Canale: {getattr(sender, 'title', 'Sconosciuto')} ({sender.id})\n\n"
+        f"📝 Messaggio:\n{message}"
+    )
+    try:
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        payload = {
+            "chat_id": CHAT_ID,
+            "text": alert_text,
+            "parse_mode": "Markdown"
+        }
+        response = requests.post(url, data=payload)
+        if response.ok:
+            logging.info(f"🔔 ALERT inviato: {keyword}")
+        else:
+            logging.error(f"❌ Errore nell'invio alert: {response.text}")
+    except Exception as e:
+        logging.error(f"❌ Errore nella richiesta HTTP: {e}")
+
 async def main():
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
     logging.info("🚀 Avvio monitoraggio canali Telegram...")
@@ -49,45 +68,37 @@ async def main():
     client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
     await client.start()
 
-    bot = telegram.Bot(token=TELEGRAM_BOT_TOKEN)
-
-    # Test: invio messaggio per verificare che funzioni
+    # Messaggio di test per confermare l’avvio
+    test_msg = "✅ Monitoraggio attivo: il bot è online!"
     try:
-        await bot.send_message(chat_id=CHAT_ID, text="📡 Monitoraggio attivo (telegram_monitor.py)")
+        requests.post(
+            f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+            data={"chat_id": CHAT_ID, "text": test_msg}
+        )
         logging.info("📨 Messaggio di test inviato con successo.")
     except Exception as e:
-        logging.error(f"❌ Errore nell'invio del messaggio di test: {e}")
+        logging.error(f"❌ Errore invio messaggio test: {e}")
 
-    # 📩 Listener per nuovi messaggi
     @client.on(events.NewMessage)
     async def handler(event):
-        message_id = event.message.id
-        chat_id = event.chat_id
-
-        if (chat_id, message_id) in processed_message_ids:
-            return  # messaggio già gestito
-
-        processed_message_ids.add((chat_id, message_id))
-
         try:
+            message_id = event.id
+            if message_id in seen_message_ids:
+                return
+            seen_message_ids.add(message_id)
+
             sender = await event.get_chat()
             message_text = event.message.message.lower()
 
             for keyword in KEYWORDS:
                 if keyword in message_text:
-                    alert_text = (
-                        f"🚨 Parola chiave trovata: *{keyword}*\n"
-                        f"📣 Canale: {getattr(sender, 'title', 'Sconosciuto')} ({event.chat_id})\n\n"
-                        f"📝 Messaggio:\n{event.message.message}"
-                    )
-                    await bot.send_message(chat_id=CHAT_ID, text=alert_text, parse_mode=telegram.constants.ParseMode.MARKDOWN)
-                    logging.info(f"🔔 ALERT inviato: {keyword}")
+                    await send_alert(keyword, sender, event.message.message)
                     break
 
         except Exception as e:
             logging.error(f"❌ Errore nella gestione del messaggio: {e}")
 
-    # ➕ Unisciti ai canali
+    # Iscrizione ai canali
     for channel in CHANNELS_TO_MONITOR:
         try:
             await client(JoinChannelRequest(channel))
@@ -97,6 +108,5 @@ async def main():
 
     await client.run_until_disconnected()
 
-# ▶️ Avvia lo script
 if __name__ == "__main__":
     asyncio.run(main())
