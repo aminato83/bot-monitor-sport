@@ -12,10 +12,9 @@ load_dotenv()
 API_ID = 23705599
 API_HASH = "c472eb3f5c85a74f99bec9aa3cfef294"
 SESSION_NAME = "telegram_monitor"
-ALERT_CHAT_ID = 7660020792  # Il tuo chat ID corretto
-# Il messaggio verrà inviato da questo account Telegram
+ALERT_CHAT_ID = 7660020792  # Chat ID tuo (bot ti scrive qui)
 
-# ✅ CANALI VERIFICATI DA MONITORARE
+# ✅ CANALI DA MONITORARE
 CHANNELS_TO_MONITOR = [
     "serieDHCWP",
     "serieDofficial",
@@ -45,6 +44,13 @@ async def main():
     client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
     await client.start()
 
+    # 🧪 Test invio messaggio
+    try:
+        await client.send_message(ALERT_CHAT_ID, "✅ Test di invio riuscito! Il bot è attivo.")
+        logging.info("📨 Messaggio di test inviato con successo.")
+    except Exception as e:
+        logging.error(f"❌ Errore nell'invio del messaggio di test: {e}")
+
     @client.on(events.NewMessage)
     async def handler(event):
         try:
@@ -65,7 +71,7 @@ async def main():
         except Exception as e:
             logging.error(f"❌ Errore nella gestione del messaggio: {e}")
 
-    # ➕ UNISCITI AI CANALI
+    # ➕ Unione ai canali
     for channel in CHANNELS_TO_MONITOR:
         try:
             await client(JoinChannelRequest(channel))
