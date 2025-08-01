@@ -3,18 +3,20 @@ import asyncio
 import logging
 from telethon import TelegramClient, events
 from telethon.tl.functions.channels import JoinChannelRequest
+from telegram import Bot
 from dotenv import load_dotenv
 
 # Carica variabili da .env (se presenti)
 load_dotenv()
 
-# 📌 DATI DI CONFIGURAZIONE
+# 📌 CREDENZIALI
 API_ID = 23705599
 API_HASH = "c472eb3f5c85a74f99bec9aa3cfef294"
 SESSION_NAME = "telegram_monitor"
-ALERT_CHAT_ID = 7660020792  # Chat ID tuo (bot ti scrive qui)
+BOT_TOKEN = "8224474749:AAE8sg_vC7HFFq1oJMKowtbTFwwwoH4QHwU"
+ALERT_CHAT_ID = 7660020792  # Chat del canale MonitorSportAlert
 
-# ✅ CANALI DA MONITORARE
+# 📢 Canali da monitorare
 CHANNELS_TO_MONITOR = [
     "serieDHCWP",
     "serieDofficial",
@@ -23,34 +25,31 @@ CHANNELS_TO_MONITOR = [
     "serieCnews",
     "legavolley",
     "legavolleyfemminile",
-    # ✅ CANALI TEST
     "calcioSerieCD",
     "calciominorecd"
 ]
 
-# 🧠 PAROLE CHIAVE DA RILEVARE
+# 🧠 Parole chiave
 KEYWORDS = [
     "infortunio", "problema", "assenza", "non convocato", "multa", "fallimento", "ritiro",
     "ritiro squadra", "partita annullata", "stadio chiuso", "penalizzazione", "debiti",
     "tifosi infuriati", "assenze importanti", "squalifica", "indisponibile", "dimissioni",
-    "esonero", "campo neutro", "senza pubblico", "problemi societari", "finestra di mercato chiuso", "giocheranno giovani", "pignoramento"
+    "esonero", "campo neutro", "senza pubblico", "problemi societari", "finestra di mercato chiuso",
+    "giocheranno giovani", "pignoramento"
 ]
 
-# 🚀 FUNZIONE PRINCIPALE
+# 🔁 Clienti
+client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
+bot = Bot(token=BOT_TOKEN)
+
+# 🚀 Funzione principale
 async def main():
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
     logging.info("🚀 Avvio monitoraggio canali Telegram...")
 
-    client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
     await client.start()
 
-    # 🧪 Test invio messaggio
-    try:
-        await client.send_message(ALERT_CHAT_ID, "✅ Test di invio riuscito! Il bot è attivo.")
-        logging.info("📨 Messaggio di test inviato con successo.")
-    except Exception as e:
-        logging.error(f"❌ Errore nell'invio del messaggio di test: {e}")
-
+    # 🎯 Handler dei messaggi
     @client.on(events.NewMessage)
     async def handler(event):
         try:
@@ -64,14 +63,15 @@ async def main():
                         f"📣 Canale: {getattr(sender, 'title', 'Sconosciuto')} ({event.chat_id})\n\n"
                         f"📝 Messaggio:\n{event.message.message}"
                     )
-                    await client.send_message(ALERT_CHAT_ID, alert_text)
+
+                    await bot.send_message(chat_id=ALERT_CHAT_ID, text=alert_text, parse_mode="Markdown")
                     logging.info(f"🔔 ALERT inviato: {keyword}")
                     break
 
         except Exception as e:
             logging.error(f"❌ Errore nella gestione del messaggio: {e}")
 
-    # ➕ Unione ai canali
+    # ➕ Iscriviti ai canali (facoltativo)
     for channel in CHANNELS_TO_MONITOR:
         try:
             await client(JoinChannelRequest(channel))
@@ -81,6 +81,6 @@ async def main():
 
     await client.run_until_disconnected()
 
-# 🎬 AVVIO SCRIPT
+# ▶️ Avvio
 if __name__ == "__main__":
     asyncio.run(main())
