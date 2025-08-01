@@ -6,7 +6,7 @@ from telethon import TelegramClient, events
 from telethon.tl.functions.channels import JoinChannelRequest
 import requests
 
-# Carica variabili da .env
+# Carica variabili da .env (se lo usi)
 load_dotenv()
 
 API_ID = 23705599
@@ -68,8 +68,6 @@ KEYWORDS = [
 
     "problemi di tesseramento", "documenti non pronti", "indisponibile per tesseramento",
     "problemi di passaporto", "giocatore non schierabile", "fuori lista", "mercato in uscita"
-]
-
 ]
 
 # Salva messaggi già visti per evitare duplicati
