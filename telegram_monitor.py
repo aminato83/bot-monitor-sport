@@ -22,6 +22,7 @@ CHANNELS_TO_MONITOR = [
     "serieCnews",
     "legavolley",
     "legavolleyfemminile"
+    "SerieCGroup"
 ]
 
 # 🔍 Parole chiave da rilevare
