@@ -1,12 +1,12 @@
 import os
 import asyncio
 import logging
-import hashlib
 import requests
 from telethon import TelegramClient, events
 from telethon.tl.functions.channels import JoinChannelRequest
 from dotenv import load_dotenv
 
+# Carica variabili da .env
 load_dotenv()
 
 API_ID = 23705599
@@ -30,11 +30,8 @@ KEYWORDS = [
     "finestra di mercato chiuso", "giocheranno giovani", "pignoramento"
 ]
 
-# 🧠 Memoria messaggi inviati (hash del contenuto)
-sent_alerts = set()
-
-def genera_hash_univoco(text):
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+# 🔒 Salviamo ID dei messaggi già inviati
+sent_messages = set()
 
 async def main():
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
@@ -43,47 +40,45 @@ async def main():
     client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
     await client.start()
 
-    # Messaggio di test
+    # ✅ Invio messaggio di test
     try:
         requests.post(
             f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
-            data={"chat_id": ALERT_CHAT_ID, "text": "📢 Monitoraggio attivo. Questo è un messaggio di test dal bot Telegram.", "parse_mode": "Markdown"}
+            data={"chat_id": ALERT_CHAT_ID, "text": "✅ Monitoraggio attivo (test Telegram bot)", "parse_mode": "Markdown"}
         )
         logging.info("📨 Messaggio di test inviato con successo.")
     except Exception as e:
-        logging.error(f"❌ Errore invio messaggio test: {e}")
+        logging.error(f"❌ Errore nell'invio del messaggio di test: {e}")
 
     @client.on(events.NewMessage)
     async def handler(event):
         try:
-            sender = await event.get_chat()
             message_text = event.message.message.lower()
+            unique_msg_id = (event.chat_id, event.id)
+
+            if unique_msg_id in sent_messages:
+                logging.info("⏩ Messaggio già inviato, ignorato.")
+                return
 
             for keyword in KEYWORDS:
                 if keyword in message_text:
+                    sender = await event.get_chat()
                     alert_text = (
                         f"🚨 Parola chiave trovata: *{keyword}*\n"
                         f"📣 Canale: {getattr(sender, 'title', 'Sconosciuto')} ({event.chat_id})\n\n"
                         f"📝 Messaggio:\n{event.message.message}"
                     )
 
-                    # Genera hash del messaggio
-                    msg_hash = genera_hash_univoco(alert_text)
+                    requests.post(
+                        f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+                        data={"chat_id": ALERT_CHAT_ID, "text": alert_text, "parse_mode": "Markdown"}
+                    )
+                    logging.info(f"🔔 ALERT inviato: {keyword}")
+                    sent_messages.add(unique_msg_id)
 
-                    if msg_hash not in sent_alerts:
-                        requests.post(
-                            f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
-                            data={"chat_id": ALERT_CHAT_ID, "text": alert_text, "parse_mode": "Markdown"}
-                        )
-                        logging.info(f"🔔 ALERT inviato: {keyword}")
-                        sent_alerts.add(msg_hash)
-
-                        # Pulizia per evitare consumo memoria
-                        if len(sent_alerts) > 1000:
-                            sent_alerts.clear()
-
-                    else:
-                        logging.info("⏩ Messaggio duplicato ignorato.")
+                    # Limita memoria usata (buffer temporaneo)
+                    if len(sent_messages) > 1000:
+                        sent_messages.clear()
                     break
 
         except Exception as e:
@@ -94,7 +89,7 @@ async def main():
             await client(JoinChannelRequest(channel))
             logging.info(f"✅ Unito al canale: {channel}")
         except Exception as e:
-            logging.warning(f"⚠️ Impossibile unirmi a {channel}: {e}")
+            logging.warning(f"⚠️ Non riesco ad accedere al canale {channel}: {e}")
 
     await client.run_until_disconnected()
 
