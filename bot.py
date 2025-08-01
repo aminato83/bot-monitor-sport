@@ -19,13 +19,46 @@ bot = Bot(token=TELEGRAM_TOKEN)
 
 # 🧠 Parole chiave da rilevare
 KEYWORDS = [
-    "infortunio", "infortuni", "infortunato", "infortunati",
-    "squalifica", "squalificato", "squalificati", "espulso", "espulsi",
-    "problemi economici", "problemi finanziari", "fallimento", "fallimenti",
-    "stipendi non pagati", "mensilitá non pagate", "debiti", "stipendi arretrati",
-    "precampionato in ritardo", "preparazione in ritardo", "giornate di squalifica",
-    "problemi di formazione", "covid", "virus", "allenamenti annullati",
-    "problemi societari", "lite interna", "crisi tecnica"
+    "infortunio", "infortunato", "infortunati", "lesione", "lesioni", "stop fisico",
+    "rottura crociato", "rottura legamenti", "problema muscolare", "stiramento", "strappo",
+    "fastidio fisico", "acciacco", "non convocato", "non disponibili", "assente", "assenti",
+    "out", "fuori rosa", "assenza", "assenze", "indisponibile", "indisponibili",
+
+    "squalifica", "squalificato", "squalificati", "espulsione", "espulso", "espulsi",
+    "ammonizione", "ammonito", "cartellino rosso", "cartellino giallo", "diffidato",
+    "sanzione disciplinare", "provvedimento disciplinare",
+
+    "formazione rimaneggiata", "formazione d'emergenza", "rosa ridotta", "rosa corta",
+    "rosa in difficoltà", "mancano titolari", "senza titolari", "con le riserve",
+    "formazione primavera", "giocano le riserve", "giocano con la primavera",
+    "giocano con la squadra primavera", "fanno giocare la primavera",
+    "fanno giocare la squadra primavera", "fanno giocare le riserve",
+    "scelte obbligate", "turnover",
+
+    "problemi societari", "problemi economici", "problemi finanziari", "stipendi non pagati",
+    "stipendi arretrati", "mensilità non pagate", "debiti", "fallimento", "rischio fallimento",
+    "penalizzazione", "punti di penalizzazione", "ritiro squadra", "sciopero",
+    "ritiro precampionato", "ritardo precampionato", "stipendi in ritardo", "società in crisi",
+    "squadra in crisi", "crisi finanziaria", "problemi con la dirigenza", "lite interna",
+
+    "lite in spogliatoio", "clima teso", "tensioni interne", "giocatori contro allenatore",
+    "esonero imminente", "contestazione tifosi", "clima negativo", "crisi tecnica",
+    "crisi di risultati", "senza vittorie", "morale basso",
+
+    "esonero", "esonerato", "cambio allenatore", "nuovo tecnico", "nuova guida",
+    "allenatore ad interim", "debutto allenatore", "debutto panchina", "prima partita nuovo allenatore",
+
+    "maltempo", "campo impraticabile", "partita rinviata", "partita a rischio", "partita sospesa",
+    "neve", "pioggia", "vento forte", "allerta meteo", "problemi di trasporto", "ritardo viaggio",
+    "guasto pullman", "trasferta difficile",
+
+    "positivo covid", "positivi al covid", "covid", "focolaio", "quarantena", "isolamento",
+    "assenza per covid", "caso covid", "contagiati", "emergenza sanitaria", "tampone positivo",
+
+    "problemi di tesseramento", "documenti non pronti", "indisponibile per tesseramento",
+    "problemi di passaporto", "giocatore non schierabile", "fuori lista", "mercato in uscita"
+]
+
 ]
 
 # 📁 File per evitare duplicati
