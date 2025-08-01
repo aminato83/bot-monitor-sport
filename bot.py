@@ -17,47 +17,31 @@ CHAT_ID = -1002120185621  # <-- Sostituisci con il tuo se diverso
 
 bot = Bot(token=TELEGRAM_TOKEN)
 
-# 🧠 Parole chiave da rilevare
+# 🧠 Parole chiave da cercare
 KEYWORDS = [
-    "infortunio", "infortunato", "infortunati", "lesione", "lesioni", "stop fisico",
-    "rottura crociato", "rottura legamenti", "problema muscolare", "stiramento", "strappo",
-    "fastidio fisico", "acciacco", "non convocato", "non disponibili", "assente", "assenti",
-    "out", "fuori rosa", "assenza", "assenze", "indisponibile", "indisponibili",
-
-    "squalifica", "squalificato", "squalificati", "espulsione", "espulso", "espulsi",
-    "ammonizione", "ammonito", "cartellino rosso", "cartellino giallo", "diffidato",
-    "sanzione disciplinare", "provvedimento disciplinare",
-
-    "formazione rimaneggiata", "formazione d'emergenza", "rosa ridotta", "rosa corta",
-    "rosa in difficoltà", "mancano titolari", "senza titolari", "con le riserve",
-    "formazione primavera", "giocano le riserve", "giocano con la primavera",
-    "giocano con la squadra primavera", "fanno giocare la primavera",
-    "fanno giocare la squadra primavera", "fanno giocare le riserve",
-    "scelte obbligate", "turnover",
-
-    "problemi societari", "problemi economici", "problemi finanziari", "stipendi non pagati",
-    "stipendi arretrati", "mensilità non pagate", "debiti", "fallimento", "rischio fallimento",
-    "penalizzazione", "punti di penalizzazione", "ritiro squadra", "sciopero",
-    "ritiro precampionato", "ritardo precampionato", "stipendi in ritardo", "società in crisi",
-    "squadra in crisi", "crisi finanziaria", "problemi con la dirigenza", "lite interna",
-
-    "lite in spogliatoio", "clima teso", "tensioni interne", "giocatori contro allenatore",
-    "esonero imminente", "contestazione tifosi", "clima negativo", "crisi tecnica",
-    "crisi di risultati", "senza vittorie", "morale basso",
-
-    "esonero", "esonerato", "cambio allenatore", "nuovo tecnico", "nuova guida",
-    "allenatore ad interim", "debutto allenatore", "debutto panchina", "prima partita nuovo allenatore",
-
-    "maltempo", "campo impraticabile", "partita rinviata", "partita a rischio", "partita sospesa",
-    "neve", "pioggia", "vento forte", "allerta meteo", "problemi di trasporto", "ritardo viaggio",
-    "guasto pullman", "trasferta difficile",
-
-    "positivo covid", "positivi al covid", "covid", "focolaio", "quarantena", "isolamento",
-    "assenza per covid", "caso covid", "contagiati", "emergenza sanitaria", "tampone positivo",
-
-    "problemi di tesseramento", "documenti non pronti", "indisponibile per tesseramento",
-    "problemi di passaporto", "giocatore non schierabile", "fuori lista", "mercato in uscita"
+    "infortunio", "infortuni", "infortunato", "infortunata", "infortunati", "infortunate",
+    "squalifica", "squalificato", "squalificata", "squalificati", "squalificate",
+    "espulso", "espulsi", "espulsa", "espulse",
+    "problemi economici", "problemi finanziari", "fallimento", "fallimenti",
+    "stipendi non pagati", "stipendi arretrati", "mensilità non pagate", "debiti",
+    "crisi societaria", "crisi tecnica", "problemi societari", "problemi di formazione",
+    "lite interna", "ritiro annullato", "ritiro cancellato", "ritiro saltato",
+    "preparazione in ritardo", "precampionato in ritardo", "ritiro in ritardo",
+    "covid", "virus", "positivi", "contagiati", "influenza",
+    "assenze", "assenze pesanti", "giocatori assenti", "assenze importanti",
+    "formazione rimaneggiata", "formazione d'emergenza", "rosa ridotta",
+    "rosa corta", "panchina corta", "solo primavera", "solo riserve",
+    "giocano con la primavera", "gioca la primavera", "giocano le riserve",
+    "giocano solo riserve", "fanno giocare la primavera", "fanno giocare le riserve",
+    "scendono in campo con la primavera", "scendono in campo con le riserve",
+    "problemi interni", "problemi nello spogliatoio",
+    "ammutinamento", "sciopero", "sciopero allenamenti", "allenamenti annullati",
+    "ritardo preparazione", "ritardi nella preparazione",
+    "assenze per squalifica", "assenze per infortunio",
+    "squadra in crisi", "problemi nello staff", "problemi con l'allenatore",
+    "giocatori separati in casa", "squadra sfavorita", "squadra rimaneggiata"
 ]
+
 
 ]
 
