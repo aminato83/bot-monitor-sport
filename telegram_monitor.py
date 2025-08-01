@@ -44,7 +44,7 @@ KEYWORDS = [
     "formazione primavera", "giocano le riserve", "giocano con la primavera",
     "giocano con la squadra primavera", "fanno giocare la primavera",
     "fanno giocare la squadra primavera", "fanno giocare le riserve",
-    "scelte obbligate", "turnover",
+    "scelte obbligate", "turnover", "primavera", "squadra primavera", "riserve", "squadra riserve",
 
     "problemi societari", "problemi economici", "problemi finanziari", "stipendi non pagati",
     "stipendi arretrati", "mensilità non pagate", "debiti", "fallimento", "rischio fallimento",
