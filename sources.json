@@ -18,13 +18,15 @@
   ],
   "volley": [
     "http://www.legavolley.it/rss.asp",
-    "https://www.pianetavolley.net/feed"
+    "https://www.pianetavolley.net/feed",
+    "https://www.volleynews.it/rss"
   ],
   "futsal": [
     "https://www.divisionecalcioa5.it/feed",
     "https://www.calcioa5live.com/rss"
   ],
   "pallamano": [
-    "https://www.handballtime.it/feed"
+    "https://www.handballtime.it/feed",
+    "https://www.federhandball.it/feed"
   ]
 }
